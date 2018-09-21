@@ -13,6 +13,13 @@ var wizardNames = ['Иван', 'Хуан Себастьян', 'Мария', 'К�
 // массив фамилий
 var wizardLastNames = ['да Марья', 'Верон', 'Мирабелла', 'Вальц', 'Онопко', 'Топольницкая', 'Нионго', 'Ирвинг'];
 
+// окно настройки персонажа
+var wizardWindow = document.querySelector('.setup');
+var initWizardPos = {
+  x: wizardWindow.style.left,
+  y: wizardWindow.style.top
+};
+
 // ф-ия генерит имя и фамилию
 function getWizardName() {
   var nameLength = wizardNames.length;
@@ -116,6 +123,10 @@ function initSimilarWizards() {
 function openWizardSetup() {
   // Для того, чтобы при открытом окне и нажатии ENTER или щелчке не вызывался постоянно remove
   if (wizardWindow.classList.contains('hidden')) {
+    // начальное положение
+    wizardWindow.style.left = initWizardPos.x;
+    wizardWindow.style.top = initWizardPos.y;
+
     // показываем окно
     wizardWindow.classList.remove('hidden');
 
@@ -312,7 +323,6 @@ function inittWizardSetupWindow() {
 initSimilarWizards();
 
 // 2. Инициализация формы (привязка событий к окну выбора персонажа...)
-var wizardWindow = document.querySelector('.setup');
 var elUserNameInput = wizardWindow.querySelector('.setup-user-name');
 
 inittWizardSetupWindow(wizardWindow);
