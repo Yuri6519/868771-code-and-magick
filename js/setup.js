@@ -162,28 +162,6 @@
 
   }
 
-  // получение значения атрибута
-  function getAttributeValue(element, attrName) {
-    var value;
-    for (var i = 0; i < element.attributes.length; i++) {
-      if (element.attributes[i].name === attrName) {
-        value = element.attributes[i].value;
-      }
-    }
-
-    return value;
-
-  }
-
-  // установка значения атрибута
-  function setAttributeValue(element, attrName, value) {
-    for (var i = 0; i < element.attributes.length; i++) {
-      if (element.attributes[i].name === attrName) {
-        element.attributes[i].value = value;
-      }
-    }
-  }
-
   // событие закрытия окна настройки персонажа по нажатию на ESCAPE
   function onCloseWizardWindowKeyDown(evt) {
     if (evt.keyCode === window.commonUtils.KEY_ESCAPE) {
@@ -191,7 +169,7 @@
       // когда окно настройки персонажа открыто, нажатие на клавишу ESC должно закрывать диалог
       // если фокус находится на форме ввода имени, то окно закрываться не должно.
       elUserNameInput = window.commonUtils.wizardWindow.querySelector('.setup-user-name');
-      var canClose = (!window.commonUtils.wizardWindow.classList.contains('hidden')) & (getAttributeValue(elUserNameInput, 'hasfocus') === 'false');
+      var canClose = (!window.commonUtils.wizardWindow.classList.contains('hidden')) & (window.commonUtils.getAttributeValue(elUserNameInput, 'hasfocus') === 'false');
 
       if (canClose) {
         closeWizardSetup();
@@ -212,7 +190,7 @@
   // обработка фокуса
   function processFocusOnUserNameInput(value) {
     elUserNameInput = window.commonUtils.wizardWindow.querySelector('.setup-user-name');
-    setAttributeValue(elUserNameInput, 'hasfocus', value);
+    window.commonUtils.setAttributeValue(elUserNameInput, 'hasfocus', value);
   }
 
   // событие клика на плаще
@@ -283,7 +261,7 @@
     // не работает, есди делать в лоб:
     // elUserNameInput.maxlength = 25;
     // elUserNameInput.minlength = 2;
-    setAttributeValue(elUserNameInput, 'maxlength', 25);
+    window.commonUtils.setAttributeValue(elUserNameInput, 'maxlength', 25);
     window.commonUtils.setObjectAttribute(elUserNameInput, 'minlength', 2);
 
     // персонаж

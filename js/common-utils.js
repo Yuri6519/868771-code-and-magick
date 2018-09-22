@@ -25,6 +25,28 @@
     return maxNumber;
   }
 
+  // получение значения атрибута
+  function getAttributeValue(element, attrName) {
+    var value;
+    for (var i = 0; i < element.attributes.length; i++) {
+      if (element.attributes[i].name === attrName) {
+        value = element.attributes[i].value;
+      }
+    }
+
+    return value;
+
+  }
+
+  // установка значения атрибута
+  function setAttributeValue(element, attrName, value) {
+    for (var i = 0; i < element.attributes.length; i++) {
+      if (element.attributes[i].name === attrName) {
+        element.attributes[i].value = value;
+      }
+    }
+  }
+
 
   // экспорт
   window.commonUtils = {
@@ -34,7 +56,9 @@
     wizardWindow: wizardWindow,
 
     setObjectAttribute: setObjectAttribute,
-    getMaxNumber: getMaxNumber
+    getMaxNumber: getMaxNumber,
+    getAttributeValue: getAttributeValue,
+    setAttributeValue: setAttributeValue
 
   };
 
