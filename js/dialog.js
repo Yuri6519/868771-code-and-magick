@@ -1,7 +1,6 @@
 'use strict';
 
 (function () {
-  var wizardWindow = document.querySelector('.setup');
   var wizardWindowAvatar = document.querySelector('.setup').querySelector('.upload');
 
   wizardWindowAvatar.addEventListener('mousedown', function (evt) {
@@ -30,11 +29,10 @@
       };
 
       // новое положение окна
-      wizardWindow.style.left = wizardWindow.offsetLeft - shiftPos.x + 'px';
-      wizardWindow.style.top = wizardWindow.offsetTop - shiftPos.y + 'px';
+      window.commonUtils.wizardWindow.style.left = window.commonUtils.wizardWindow.offsetLeft - shiftPos.x + 'px';
+      window.commonUtils.wizardWindow.style.top = window.commonUtils.wizardWindow.offsetTop - shiftPos.y + 'px';
 
-      isMove = true;
-
+      isMove = isMove ? isMove : (Math.abs(shiftPos.x) > 0 || Math.abs(shiftPos.y) > 0);
     }
 
     function onMouseUp(evtUp) {
