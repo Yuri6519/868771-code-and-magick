@@ -281,6 +281,18 @@
 
   }
 
+  //
+  function cbSuccessLoadWizard(wizardData) {
+    console.log(wizardData);
+  }
+
+  //
+  function cbErrorLoadWizard(mes) {
+    console.log(mes);
+  }
+
+
+
   // точка входа
   // 1. Инициализация похожих персонажей
   initSimilarWizards();
@@ -289,5 +301,10 @@
   var elUserNameInput = window.commonUtils.wizardWindow.querySelector('.setup-user-name');
 
   inittWizardSetupWindow(window.commonUtils.wizardWindow);
+
+  window.backend.load(cbSuccessLoadWizard, cbErrorLoadWizard);
+
+  window.backend.save(cbSuccessLoadWizard);
+
 
 })();
