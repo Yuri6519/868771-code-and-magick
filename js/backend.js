@@ -4,11 +4,32 @@
 
 (function () {
 
-  var url = ' https://js.dump.academy/code-and-magick/data';
+  var url = ' https://js.dump.academy/code-and-magick';
 
+  // с помощью XMLHttpRequest
   function load(onLoad, onError) {
+    processRequest(onLoad, onError, 'GET', url + '/data');
+  }
+
+  // JSONP для практики (без обработки ошибок)
+  function loadJsonp(onLoad) {
+    window.GetIt = function (data) {
+      onLoad(data);
+    };
+
+    var scriptEl = document.createElement('script');
+    scriptEl.src = url + '/data?callback=GetIt';
+    document.body.appendChild(scriptEl);
+
+  }
+
+  function save(data, onLoad, onError) {
+    processRequest(onLoad, onError, 'POST', url, data);
+  }
+
+  // запросы GET И POST почти одинаковые для примера и отличаются параметрами, поэтому сделал общий обраболтчик
+  function processRequest(onLoad, onError, method, reqUrl, data) {
     // ради практики заверну все в try/catch
-    // генерю внутри ошибку throw new Error('ERROR OSSURED HERE!') - работает ))
     try {
       var req = new XMLHttpRequest();
       req.responseType = 'json';
@@ -34,33 +55,25 @@
       });
 
       req.timeout = 30000; // 30сек
-      req.open('GET', url);
-      req.send();
+      req.open(method, reqUrl);
+
+      if (method === 'POST') {
+        req.send(data);
+      } else if (method === 'GET') {
+        req.send();
+      } else {
+        throw new Error('неизвестный метод: ' + method);
+      }
 
     } catch (err) {
       onError('Общая ошибка получения данных: ' + err);
     }
-
-  }
-
-  //function save(data, onLoad, onError) {
-  function save(onLoad) {
-    window.GetIt = function (data) {
-      onLoad(data);
-    };
-
-    var scriptEl = document.createElement('script');
-    scriptEl.src = url + '?callback=GetIt';
-
-console.log(scriptEl);
-    
-    document.body.appendChild(scriptEl);
-
   }
 
   window.backend = {
     load: load,
-    save: save
+    save: save,
+    loadJsonp: loadJsonp
 
   };
 

@@ -4,6 +4,12 @@
   // url отправки формы визарда
   var WIZARD_FORM_URL = 'https://js.dump.academy/code-and-magick';
 
+  // форма визарда
+  var wizardForm = window.commonUtils.wizardWindow.querySelector('.setup-wizard-form');
+
+  // input формы визарда
+  var elUserNameInput = window.commonUtils.wizardWindow.querySelector('.setup-user-name');
+
   // массив имен
   var wizardNames = ['Иван', 'Хуан Себастьян', 'Мария', 'Кристоф', 'Виктор', 'Юлия', 'Люпита', 'Вашингтон'];
 
@@ -15,6 +21,9 @@
     x: window.commonUtils.wizardWindow.style.left,
     y: window.commonUtils.wizardWindow.style.top
   };
+
+  // ключ на генерацию тестовых данных
+  var isModeTest = false;
 
   // ф-ия генерит имя и фамилию
   function getWizardName() {
@@ -58,18 +67,34 @@
     return wizardFireballColor[Math.round(Math.random() * (wizardFireballColor.length - 1))];
   }
 
-  // ф-ия генрит и заполняет массив персонажей. Количество задает входной параметр
-  function getWizards(length) {
-    var wizardsArray = [];
+  // ф-ия заполняет массив персонажей случайными naum из данных, полученных с сервера.
+  function getWizards(wizardsArray, num) {
+    var wizardsArrayRes = [];
 
-    for (var i = 0; i < length; i++) {
-      wizardsArray[i] = {
-        name: getWizardName(),
-        coatColor: getWizardCoatColor(),
-        eyesColor: getWizardEyesColor()
+    // защита от повторения персонажей
+    var arrClone = wizardsArray.slice();
+
+    // случайные num персонажа из полученных данных
+    for (var i = 0; i < num; i++) {
+
+      var item = arrClone.splice(Math.round(Math.random() * (arrClone.length - 1)), 1)[0];
+
+      wizardsArrayRes[i] = {
+        name: item.name,
+        coatColor: item.colorCoat,
+        eyesColor: item.colorEyes
       };
+
+      // тестовые данные
+      if (isModeTest) {
+        wizardsArrayRes[i] = {
+          name: getWizardName(),
+          coatColor: getWizardCoatColor(),
+          eyesColor: getWizardEyesColor()
+        };
+      }
     }
-    return wizardsArray;
+    return wizardsArrayRes;
   }
 
   // ф-ия генерит один персонаж - DOM element
@@ -92,21 +117,37 @@
     return fragment;
   }
 
-  // инициализация кастомных визардов
-  function initSimilarWizards() {
-    // 1. Объявим переменную, содержащую массив персонажей и заполним массив
-    var wizards = getWizards(4);
+  // отрисовка wizards
+  function drawWizards(conntainer) {
+    // элемент
+    var similarList = document.querySelector('.setup-similar-list');
 
-    // 2. Вытащим шаблон и создадим DOM элементы. Хранить будем в DocumentFragment
+    var items = similarList.querySelectorAll('.setup-similar-item');
+
+    // очистим
+    for (var i = 0; i < items.length; i++) {
+      items[i].remove();
+    }
+
+    // добавим
+    similarList.appendChild(conntainer);
+  }
+
+  // инициализация кастомных визардов
+  function initSimilarWizards(wizardsArray) {
+
+    var wizards = getWizards(wizardsArray, 4);
+
+    // 1. Вытащим шаблон и создадим DOM элементы. Хранить будем в DocumentFragment
     var template = document.getElementById('similar-wizard-template').content.querySelector('.setup-similar-item');
 
-    // 3. Получим заполненный фрагмент с персонажами
+    // 2. Получим заполненный фрагмент с персонажами
     var conntainer = createSimilarWizards(wizards, template);
 
-    // 4. Отрисуем персонажи
-    document.querySelector('.setup-similar-list').appendChild(conntainer);
+    // 3. Отрисуем персонажи
+    drawWizards(conntainer);
 
-    // 5. Покажем
+    // 4. Покажем
     document.querySelector('.setup-similar').classList.remove('hidden');
   }
 
@@ -119,11 +160,25 @@
       window.commonUtils.wizardWindow.style.left = initWizardPos.x;
       window.commonUtils.wizardWindow.style.top = initWizardPos.y;
 
+      // уберем сообщение об ошибке (если было)
+      var errElem = document.querySelector('.setup-error');
+      if (errElem) {
+        errElem.remove();
+      }
+
       // показываем окно
       window.commonUtils.wizardWindow.classList.remove('hidden');
 
       // регистрируем событие на документе (пробовал непосредственно на самом окне - не работает)) ) - при нажатии ESCAPE
       document.addEventListener('keydown', onCloseWizardWindowKeyDown);
+
+      // отрисовка похожих персонажей - данные с сервера
+      // XMLHttpRequest
+      window.backend.load(cbSuccessLoadWizard, cbErrorLoadWizard);
+
+      // JSONP
+      // window.backend.loadJsonp(cbSuccessLoadWizard, cbErrorLoadWizard);
+
     }
 
   }
@@ -252,8 +307,13 @@
 
     // по ТЗ:фФорма должна отправляться на урл https://js.dump.academy/code-and-magick методом POST с типом multipart/form-data
     // в index.html у формы есть method="post" и enctype="multipart/form-data". Не хватает action
-    var wizardForm = window.commonUtils.wizardWindow.querySelector('.setup-wizard-form');
     wizardForm.action = WIZARD_FORM_URL;
+
+    // событие отправки данных на форму
+    wizardForm.addEventListener('submit', function (evt) {
+      evt.preventDefault();
+      window.backend.save(new FormData(wizardForm), cbSuccessSaveWizard, cbErrorLoadWizard);
+    });
 
     // условия валидации длины имени персонажа
     // имя персонажа не может содержать менее 2 символов
@@ -281,30 +341,32 @@
 
   }
 
-  //
+  // callback на загрузку персонажей
   function cbSuccessLoadWizard(wizardData) {
-    console.log(wizardData);
+    initSimilarWizards(wizardData);
   }
 
-  //
+  // callback на обработку ошибок при работе с сервером через окно выбора персонажей
   function cbErrorLoadWizard(mes) {
-    console.log(mes);
+    var elDiv = document.createElement('div');
+    elDiv.style.color = 'white';
+    elDiv.style.background = 'red';
+    elDiv.textContent = mes;
+    elDiv.classList.add('setup-error'); // чтобы можно было убрать
+    window.commonUtils.wizardWindow.appendChild(elDiv);
   }
 
+  // callback на отправку формы
+  function cbSuccessSaveWizard() {
+    window.commonUtils.wizardWindow.classList.add('hidden');
+  }
 
 
   // точка входа
   // 1. Инициализация похожих персонажей
-  initSimilarWizards();
+  // initSimilarWizards(); // перенес в окно выбора персонажа, так как логично, что данные на сервере могут меняться и лучше каждый раз при открытии окна и отрисвоке похожих персонажей боать их с сервера
 
   // 2. Инициализация формы (привязка событий к окну выбора персонажа...)
-  var elUserNameInput = window.commonUtils.wizardWindow.querySelector('.setup-user-name');
-
   inittWizardSetupWindow(window.commonUtils.wizardWindow);
-
-  window.backend.load(cbSuccessLoadWizard, cbErrorLoadWizard);
-
-  window.backend.save(cbSuccessLoadWizard);
-
 
 })();
