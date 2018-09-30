@@ -25,6 +25,19 @@
   // ключ на генерацию тестовых данных
   var isModeTest = false;
 
+  // массив визардов, полученный с сервера
+  var arrayServerWizards = [];
+
+  // персонаж
+  var wizardPlayer = document.querySelector('.setup-player').querySelector('.setup-wizard').querySelector('.wizard');
+
+  // персонаж
+  var wizardPlayerObj = {
+    coat: wizardPlayer.querySelector('.wizard-coat'),
+    eyes: wizardPlayer.querySelector('.wizard-eyes'),
+    fireball: document.querySelector('.setup-fireball-wrap')
+  };
+
   // ф-ия генерит имя и фамилию
   function getWizardName() {
     var nameLength = wizardNames.length;
@@ -67,26 +80,76 @@
     return wizardFireballColor[Math.round(Math.random() * (wizardFireballColor.length - 1))];
   }
 
-  // ф-ия заполняет массив персонажей случайными naum из данных, полученных с сервера.
-  function getWizards(wizardsArray, num) {
+  // возвращает балы весомости мага
+  function getMark(wizard, coatColor, eyesColor) {
+    var res = 0;
+    if (wizard.colorCoat === coatColor) {
+      res += 2;
+    }
+
+    if (wizard.colorEyes === eyesColor) {
+      res += 1;
+    }
+
+    return res;
+  }
+
+
+  // ф-ия заполняет массив персонажей Длдиной num из данных, полученных с сервера.
+  function getWizards(num) {
     var wizardsArrayRes = [];
 
-    // защита от повторения персонажей
-    var arrClone = wizardsArray.slice();
+    // 1. Сортировка массива под похожего персонажа
+    // цвет куртки
+    var currentCoatColor = wizardPlayerObj.coat.style.fill;
+    // цвет глаз
+    var currentEyesColor = wizardPlayerObj.eyes.style.fill;
+    // для первой сортировки прри загрузке цвет не определен (см. разметку), поэтому для первого раза беру из разметки дефолтовый
+    if (!currentEyesColor) {
+      var listInputs = document.querySelector('.setup-wizard-appearance').querySelectorAll('input');
+      var clrInput = [].map.call(listInputs, function (itr) {
+        return {name: itr.name,
+          value: itr.value
+        };
+      }).filter(function (itr) {
+        return itr.name === 'eyes-color';
+      });
 
-    // случайные num персонажа из полученных данных
-    for (var i = 0; i < num; i++) {
+      currentEyesColor = clrInput[0].value;
 
-      var item = arrClone.splice(Math.round(Math.random() * (arrClone.length - 1)), 1)[0];
+    }
 
-      wizardsArrayRes[i] = {
-        name: item.name,
-        coatColor: item.colorCoat,
-        eyesColor: item.colorEyes
-      };
+    // работаем с копией полученных данных
+    var cloneArr = arrayServerWizards.slice().sort(function (one, two) {
+      var left = getMark(one, currentCoatColor, currentEyesColor);
+      var right = getMark(two, currentCoatColor, currentEyesColor);
+      var res;
 
-      // тестовые данные
-      if (isModeTest) {
+      if (left > right) {
+        res = -1;
+      } else if (left < right) {
+        res = 1;
+      } else {
+        // по имени для одинаковых
+        if (one.name < two.name) {
+          res = -1;
+        } else if (one.name > two.name) {
+          res = 1;
+        } else {
+          res = 0;
+        }
+      }
+      return res;
+
+    });
+
+    wizardsArrayRes = cloneArr.slice(0, num);
+
+    // не убираю тестовый - жалко код терять ))
+    if (isModeTest) {
+      // случайные num персонажа из полученных данных
+      for (var i = 0; i < num; i++) {
+        // тестовые данные
         wizardsArrayRes[i] = {
           name: getWizardName(),
           coatColor: getWizardCoatColor(),
@@ -94,6 +157,7 @@
         };
       }
     }
+
     return wizardsArrayRes;
   }
 
@@ -101,8 +165,8 @@
   function createSimilarWizard(wizardData, template) {
     var similarWizard = template.cloneNode(true);
     similarWizard.querySelector('.setup-similar-label').textContent = wizardData.name;
-    similarWizard.querySelector('.wizard').querySelector('.wizard-coat').style.fill = wizardData.coatColor;
-    similarWizard.querySelector('.wizard').querySelector('.wizard-eyes').style.fill = wizardData.eyesColor;
+    similarWizard.querySelector('.wizard').querySelector('.wizard-coat').style.fill = wizardData.colorCoat;
+    similarWizard.querySelector('.wizard').querySelector('.wizard-eyes').style.fill = wizardData.colorEyes;
     return similarWizard;
   }
 
@@ -134,9 +198,9 @@
   }
 
   // инициализация кастомных визардов
-  function initSimilarWizards(wizardsArray) {
+  function initSimilarWizards() {
 
-    var wizards = getWizards(wizardsArray, 4);
+    var wizards = getWizards(4);
 
     // 1. Вытащим шаблон и создадим DOM элементы. Хранить будем в DocumentFragment
     var template = document.getElementById('similar-wizard-template').content.querySelector('.setup-similar-item');
@@ -256,6 +320,8 @@
   // ф-ия обработки нажатия клика на плаще
   function processClickOnWizardCoat(wizardCoat) {
     wizardCoat.style.fill = getWizardCoatColor();
+    // отрисовка похожих персонажей
+    window.debounce.debounce(500, initSimilarWizards);
   }
 
   // событие клика на глазах персонажа
@@ -266,6 +332,8 @@
   // ф-ия обработки нажатия клика на глазах персонажа
   function processClickOnWizardEyes(wizardEyes) {
     wizardEyes.style.fill = getWizardEyesColor();
+    // отрисовка похожих персонажей
+    window.debounce.debounce(500, initSimilarWizards);
   }
 
   // событие клика на фаерболе
@@ -324,26 +392,26 @@
     window.commonUtils.setAttributeValue(elUserNameInput, 'maxlength', 25);
     window.commonUtils.setObjectAttribute(elUserNameInput, 'minlength', 2);
 
-    // персонаж
-    var wizardPlayer = document.querySelector('.setup-player').querySelector('.setup-wizard').querySelector('.wizard');
+    // событие на плащ персонажа
+    wizardPlayerObj.coat.addEventListener('click', onWizardCoatCkick);
 
-    // плащ персонажа
-    var wizardCoat = wizardPlayer.querySelector('.wizard-coat');
-    wizardCoat.addEventListener('click', onWizardCoatCkick);
+    // событие на глаза персонажа
+    wizardPlayerObj.eyes.addEventListener('click', onWizardEyesCkick);
 
-    // глаза персонажа
-    var wizardEyes = wizardPlayer.querySelector('.wizard-eyes');
-    wizardEyes.addEventListener('click', onWizardEyesCkick);
-
-    // файербол
-    var wizarFireball = document.querySelector('.setup-fireball-wrap');
-    wizarFireball.addEventListener('click', onWizardFireballCkick);
+    // событие на файербол
+    wizardPlayerObj.fireball.addEventListener('click', onWizardFireballCkick);
 
   }
 
   // callback на загрузку персонажей
   function cbSuccessLoadWizard(wizardData) {
-    initSimilarWizards(wizardData);
+
+    // запомним данные с сервера
+    arrayServerWizards = wizardData.slice();
+
+    // отрисовка похожих персонажей - сразу после открытия формы и загрузки данных с сервера
+    initSimilarWizards();
+
   }
 
   // callback на обработку ошибок при работе с сервером через окно выбора персонажей
@@ -363,10 +431,7 @@
 
 
   // точка входа
-  // 1. Инициализация похожих персонажей
-  // initSimilarWizards(); // перенес в окно выбора персонажа, так как логично, что данные на сервере могут меняться и лучше каждый раз при открытии окна и отрисвоке похожих персонажей боать их с сервера
-
-  // 2. Инициализация формы (привязка событий к окну выбора персонажа...)
+  // 1. Инициализация формы (привязка событий к окну выбора персонажа...)
   inittWizardSetupWindow(window.commonUtils.wizardWindow);
 
 })();
