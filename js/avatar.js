@@ -21,7 +21,10 @@
         var fileReader = new FileReader();
 
         fileReader.addEventListener('load', function () {
+          // меняем на форме диалога
           avatarImg.src = fileReader.result;
+          // меняем на главной форме - иначе не понятно зачем меняли в диалоге
+          document.querySelector('.setup-open-icon').src = fileReader.result;
         });
 
         fileReader.readAsDataURL(avatarFile);
